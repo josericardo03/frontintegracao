@@ -1,103 +1,403 @@
+"use client";
+import { useState } from "react";
 import Image from "next/image";
+import { FaSearch, FaBars } from "react-icons/fa";
+import logo from "../assets/logobranca 1.png";
+import { api } from "./services/api";
+import { ApiResponse, SearchParams } from "../types/api";
+import { PessoaFisicaDetails } from "./components/PessoaFisicaDetails";
+import { PessoaJuridicaDetails } from "./components/PessoaJuridicaDetails";
+import { SocioDetails } from "./components/SocioDetails";
+import { ResumoOperacao } from "./components/ResumoOperacao";
+import { ErrosEncontrados } from "./components/ErrosEncontrados";
 
-export default function Home() {
+interface TableItem {
+  label: string;
+  message: string;
+}
+
+interface RouteData {
+  [key: string]: TableItem[];
+}
+
+/**
+ * Exemplo de uso:
+ * 1. Selecione "Pessoa Jurídica" no menu suspenso
+ * 2. Digite um CNPJ no campo de busca (ex: 12345678000190)
+ * 3. (Opcional) Selecione um status (ex: "deferido")
+ * 4. Clique em "Buscar"
+ *
+ * O sistema retornará:
+ * - Total de registros processados
+ * - CNPJs enviados
+ * - CNPJs atualizados
+ * - Detalhes do resultado com status e mensagens
+ */
+export default function Dashboard() {
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [showMenu, setShowMenu] = useState(false);
+  const [selectedRoute, setSelectedRoute] =
+    useState<keyof RouteData>("default");
+  const [loading, setLoading] = useState(false);
+  const [apiResponse, setApiResponse] = useState<ApiResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [routeData, setRouteData] = useState<RouteData>({
+    default: [
+      { label: "Status", message: "Aguardando busca..." },
+      { label: "Registros Processados", message: "0" },
+      { label: "CNPJs/CPFs Enviados", message: "0" },
+      { label: "CNPJs/CPFs Atualizados", message: "0" },
+      { label: "Erros", message: "0" },
+    ],
+    pessoaFisica: [
+      { label: "Status", message: "Aguardando busca..." },
+      { label: "Registros Processados", message: "0" },
+      { label: "CPFs Enviados", message: "0" },
+      { label: "CPFs Atualizados", message: "0" },
+      { label: "Erros", message: "0" },
+    ],
+    pessoaJuridica: [
+      { label: "Status", message: "Aguardando busca..." },
+      { label: "Registros Processados", message: "0" },
+      { label: "CNPJs Enviados", message: "0" },
+      { label: "CNPJs Atualizados", message: "0" },
+      { label: "Erros", message: "0" },
+    ],
+    socio: [
+      { label: "Status", message: "Aguardando busca..." },
+      { label: "Registros Processados", message: "0" },
+      { label: "Documentos Enviados", message: "0" },
+      { label: "Documentos Atualizados", message: "0" },
+      { label: "Erros", message: "0" },
+    ],
+  });
+
+  const [searchParams, setSearchParams] = useState<SearchParams>({
+    documento: "",
+    status: "",
+  });
+
+  const handleSearch = async () => {
+    if (selectedRoute === "default") {
+      setError("Por favor, selecione um tipo de busca");
+      return;
+    }
+
+    if (!search && selectedRoute !== "default") {
+      setError("Por favor, insira um documento para buscar");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      let response: ApiResponse;
+      const searchParams = {
+        documento: search,
+        ...(status && { status: status.toLowerCase() }),
+      };
+
+      switch (selectedRoute) {
+        case "pessoaFisica":
+          response = await api.searchPessoaFisica(searchParams);
+          break;
+        case "pessoaJuridica":
+          response = await api.searchPessoaJuridica(searchParams);
+          break;
+        case "socio":
+          response = await api.searchSocios(searchParams);
+          break;
+        default:
+          throw new Error("Selecione uma rota válida");
+      }
+
+      // Verifica se é uma mensagem de documento já existente
+      const isDocumentoExistente = response.message
+        .toLowerCase()
+        .includes("já existe");
+
+      if (isDocumentoExistente) {
+        setError(response.message);
+        const newData = [...routeData[selectedRoute]];
+        newData[0].message = "Documento já cadastrado";
+        newData[1].message = "0";
+        newData[2].message = "0";
+        newData[3].message = "0";
+        newData[4].message = "0";
+
+        setRouteData((prev) => ({
+          ...prev,
+          [selectedRoute]: newData,
+        }));
+      } else {
+        setApiResponse(response);
+        updateTableData(response);
+      }
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao processar a requisição";
+      setError(errorMessage);
+
+      // Atualiza a tabela com valores zerados em caso de erro
+      const newData = [...routeData[selectedRoute]];
+      newData[0].message = "Erro";
+      newData[1].message = "0";
+      newData[2].message = "0";
+      newData[3].message = "0";
+      newData[4].message = "0";
+
+      setRouteData((prev) => ({
+        ...prev,
+        [selectedRoute]: newData,
+      }));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateTableData = (response: ApiResponse) => {
+    const newData = [...routeData[selectedRoute]];
+
+    // Verifica se há erros nos resultados
+    const errosOperacoes = response.data?.resultados
+      ? Object.values(response.data.resultados)
+          .flat()
+          .filter((op) => !op?.sucesso).length
+      : 0;
+
+    const errosGerais = response.data?.erros?.length || 0;
+    const totalErros = errosOperacoes + errosGerais;
+
+    newData[0].message = response.success ? "Sucesso" : "Erro";
+    newData[1].message = String(response.data?.registrosProcessados || 0);
+    newData[2].message = String(response.data?.cnpjEnviados?.length || 0);
+    newData[3].message = String(response.data?.cnpjAtualizados?.length || 0);
+    newData[4].message = String(totalErros);
+
+    setRouteData((prev) => ({
+      ...prev,
+      [selectedRoute]: newData,
+    }));
+  };
+
+  const handleRouteSelect = (route: keyof RouteData) => {
+    setSelectedRoute(route);
+    setShowMenu(false);
+    setApiResponse(null);
+    setError(null);
+  };
+
+  const handleEnviarDados = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Log para debug
+      console.log("Iniciando envio de dados:", {
+        documento: searchParams?.documento,
+        status: searchParams?.status,
+      });
+
+      // Primeiro tenta enviar os dados
+      const response = await api.enviarDados({
+        documento: searchParams?.documento || "",
+        status: searchParams?.status || "",
+      });
+
+      // Log da resposta
+      console.log("Resposta da API:", response);
+
+      if (response.success) {
+        setApiResponse(response);
+        setError(null);
+      } else {
+        // Se falhar no envio, tenta atualizar
+        console.log("Falha no envio, tentando atualizar...");
+        const updateResponse = await api.atualizarDados({
+          documento: searchParams?.documento || "",
+          status: searchParams?.status || "",
+        });
+
+        // Log da resposta da atualização
+        console.log("Resposta da atualização:", updateResponse);
+
+        if (updateResponse.success) {
+          setApiResponse(updateResponse);
+          setError(null);
+        } else {
+          setError(updateResponse.message || "Erro ao processar requisição");
+          setApiResponse(null);
+        }
+      }
+    } catch (err) {
+      // Log do erro
+      console.error("Erro ao processar requisição:", err);
+      setError(
+        "Erro ao processar requisição. Verifique o console para mais detalhes."
+      );
+      setApiResponse(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
+    <div className="min-h-screen bg-[#273C65] text-white flex flex-col items-center p-8">
+      {/* Logo */}
+      <div className="mb-10">
         <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
+          src={logo}
+          alt="Logo"
+          width={200}
+          height={60}
+          className="mx-auto"
         />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+      </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+      {/* Container Principal */}
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl p-8">
+        {/* Barra de Pesquisa e Filtros */}
+        <div className="flex items-center space-x-4 mb-8">
+          {/* Campo de Busca */}
+          <div className="relative flex-1">
+            <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Digite o documento..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full h-12 pl-12 pr-4 rounded-full border-2 border-gray-200 focus:border-blue-500 focus:outline-none text-gray-700 text-sm"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          </div>
+
+          {/* Dropdown Status */}
+          <div className="relative min-w-[150px]">
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="w-full h-12 px-4 rounded-full border-2 border-gray-200 focus:border-blue-500 focus:outline-none text-gray-700 appearance-none cursor-pointer text-sm"
+            >
+              <option value="">Sem Status</option>
+              <option value="deferido">Deferido</option>
+              <option value="pendente">Pendente</option>
+              <option value="indeferido">Indeferido</option>
+              <option value="em_analise">Em Análise</option>
+              <option value="desistente">Desistente</option>
+              <option value="pendencias-analise">Pendências Análise</option>
+              <option value="garantias">Garantias</option>
+              <option value="vencida">Vencida</option>
+              <option value="proposta_inicial">Proposta Inicial</option>
+              <option value="aguardando_documentacao">
+                Aguardando Documentação
+              </option>
+              <option value="favoravel_media_e_grande_empresa">
+                Favorável Média e Grande
+              </option>
+              <option value="indeferido-gerente">Indeferido Gerente</option>
+            </select>
+            <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+              ▼
+            </span>
+          </div>
+
+          {/* Botões */}
+          <div className="flex items-center space-x-3">
+            <div className="relative">
+              <button
+                className="h-12 px-6 rounded-full border-2 border-gray-200 hover:bg-gray-50 transition-colors flex items-center space-x-2 text-gray-700"
+                onClick={() => setShowMenu(!showMenu)}
+              >
+                <FaBars className="text-gray-400" />
+                <span className="text-sm">Tipo de Busca</span>
+              </button>
+
+              {/* Menu Suspenso */}
+              {showMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-2 z-10">
+                  <ul className="text-sm text-gray-700">
+                    <li
+                      className="px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                      onClick={() => handleRouteSelect("pessoaFisica")}
+                    >
+                      Pessoa Física
+                    </li>
+                    <li
+                      className="px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                      onClick={() => handleRouteSelect("pessoaJuridica")}
+                    >
+                      Pessoa Jurídica
+                    </li>
+                    <li
+                      className="px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                      onClick={() => handleRouteSelect("socio")}
+                    >
+                      Sócio
+                    </li>
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={handleSearch}
+              disabled={loading}
+              className="h-12 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors text-sm disabled:bg-blue-300"
+            >
+              {loading ? "Processando..." : "Buscar"}
+            </button>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* Mensagem de Erro */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <p className="font-bold">Erro:</p>
+            <p>{error}</p>
+            <p className="text-sm mt-2">
+              Verifique o console do navegador para mais detalhes.
+            </p>
+          </div>
+        )}
+
+        {/* Tipo de Busca Selecionado */}
+        <div className="mb-4">
+          <span className="text-gray-600 text-sm">
+            Tipo de busca selecionado:{" "}
+            {selectedRoute === "default" ? "Nenhum" : selectedRoute}
+          </span>
+        </div>
+
+        {/* Conteúdo Principal */}
+        {selectedRoute === "pessoaFisica" && !error && apiResponse && (
+          <PessoaFisicaDetails apiResponse={apiResponse} />
+        )}
+        {selectedRoute === "pessoaJuridica" && !error && apiResponse && (
+          <PessoaJuridicaDetails apiResponse={apiResponse} />
+        )}
+        {selectedRoute === "socio" && !error && apiResponse && (
+          <SocioDetails apiResponse={apiResponse} />
+        )}
+
+        {/* Loading Overlay */}
+        {loading && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-xl">
+              <p className="text-gray-700">Processando sua solicitação...</p>
+            </div>
+          </div>
+        )}
+
+        {apiResponse && (
+          <div className="mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <ResumoOperacao apiResponse={apiResponse} />
+              <ErrosEncontrados apiResponse={apiResponse} />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
