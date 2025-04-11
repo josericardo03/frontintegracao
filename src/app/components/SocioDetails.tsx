@@ -20,13 +20,10 @@ export function SocioDetails({ apiResponse }: SocioDetailsProps) {
   const conjuge = apiResponse.data.resultados.conjuge?.[0]?.responseData;
   const enderecoEmpresa = apiResponse.data.resultados.enderecoEmpresa?.[0];
 
-  // Função para extrair a mensagem de erro
-  const getErrorMessage = (error: any) => {
-    if (typeof error === "string") return error;
-    if (error?.message) return error.message;
-    if (error?.erro) return error.erro;
-    return "Erro desconhecido";
-  };
+  // Verifica se houve erro em pessoa que não foi atualizado
+  const erroPessoa = apiResponse.data.resultados.pessoa?.[0];
+  const pessoaAtualizada = apiResponse.data.resultados.pessoaAtualizada?.[0];
+  const mostrarErroPessoa = erroPessoa && !pessoaAtualizada?.sucesso;
 
   return (
     <div className="bg-white rounded-lg shadow p-6 mt-6">
@@ -48,6 +45,13 @@ export function SocioDetails({ apiResponse }: SocioDetailsProps) {
           </div>
         </div>
       </div>
+
+      {/* Mensagem de erro da pessoa, se necessário */}
+      {mostrarErroPessoa && (
+        <div className="mb-4 p-4 bg-red-50 rounded">
+          <p className="text-red-600">{erroPessoa.mensagem}</p>
+        </div>
+      )}
 
       {/* Grid de informações */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

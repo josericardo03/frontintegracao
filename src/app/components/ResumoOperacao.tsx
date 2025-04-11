@@ -44,15 +44,21 @@ export function ResumoOperacao({ apiResponse }: ResumoOperacaoProps) {
 
   return (
     <div className="bg-white p-4 rounded-lg shadow">
-      <h4 className="font-medium mb-2">Resumo da Operação</h4>
+      <h4 className="font-medium mb-2 text-gray-600">Resumo da Operação</h4>
       <div className="space-y-2">
         <p className={apiResponse.success ? "text-green-600" : "text-red-600"}>
           Status: {apiResponse.success ? "Sucesso" : "Erro"}
         </p>
-        <p>Mensagem: {apiResponse.message}</p>
-        <p>Total de Registros: {getTotalRegistros()}</p>
-        <p>Documentos Enviados: {getTotalEnviados()}</p>
-        <p>Documentos Atualizados: {getTotalAtualizados()}</p>
+        <p className="text-gray-600">Mensagem: {apiResponse.message}</p>
+        <p className="text-gray-600">
+          Total de Registros: {getTotalRegistros()}
+        </p>
+        <p className="text-gray-600">
+          Documentos Enviados: {getTotalEnviados()}
+        </p>
+        <p className="text-gray-600">
+          Documentos Atualizados: {getTotalAtualizados()}
+        </p>
       </div>
     </div>
   );
