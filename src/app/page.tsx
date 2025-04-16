@@ -310,7 +310,15 @@ export default function Dashboard() {
                 onClick={() => setShowMenu(!showMenu)}
               >
                 <FaBars className="text-gray-400" />
-                <span className="text-sm">Tipo de Busca</span>
+                <span className="text-sm">
+                  {selectedRoute === "default"
+                    ? "Tipo de Busca"
+                    : selectedRoute === "pessoaFisica"
+                    ? "Pessoa Física"
+                    : selectedRoute === "pessoaJuridica"
+                    ? "Pessoa Jurídica"
+                    : "Sócio"}
+                </span>
               </button>
 
               {/* Menu Suspenso */}
