@@ -135,7 +135,20 @@ export default function Dashboard() {
         setApiResponse(response);
         updateTableData(response);
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error("Erro na busca:", err);
+
+      // Se for erro 404, trata como "Nenhum registro encontrado"
+      if (err.response?.status === 404) {
+        const notFoundResponse: ApiResponse = {
+          success: false,
+          message: "Nenhum registro encontrado",
+        };
+        setApiResponse(notFoundResponse);
+        setError(null); // Remove a mensagem de erro
+        return;
+      }
+
       const errorMessage =
         err instanceof Error ? err.message : "Erro ao processar a requisição";
       setError(errorMessage);

@@ -5,6 +5,24 @@ interface PessoaFisicaDetailsProps {
 }
 
 export function PessoaFisicaDetails({ apiResponse }: PessoaFisicaDetailsProps) {
+  // Se não houver sucesso e a mensagem for de nenhum registro, mostra mensagem amigável
+  if (
+    !apiResponse.success &&
+    apiResponse.message === "Nenhum registro encontrado"
+  ) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg shadow-md">
+        <div className="text-4xl mb-4">🔍</div>
+        <h2 className="text-xl font-semibold text-gray-800 mb-2">
+          Nenhum Registro Encontrado
+        </h2>
+        <p className="text-gray-600">
+          Não foram encontrados dados para esta pesquisa.
+        </p>
+      </div>
+    );
+  }
+
   if (!apiResponse?.data?.resultados?.pessoa?.[0]) {
     return null;
   }
