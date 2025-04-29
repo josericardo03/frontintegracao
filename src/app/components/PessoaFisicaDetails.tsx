@@ -36,51 +36,50 @@ export function PessoaFisicaDetails({ apiResponse }: PessoaFisicaDetailsProps) {
   const conjuge = apiResponse.data.resultados.conjuge?.[0]?.responseData;
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 mt-6">
-      {/* Cabeçalho */}
-      <div className="border-b border-gray-200 pb-4 mb-4">
-        <h2 className="text-2xl font-semibold text-gray-800">
-          {pessoa.nomePessoa}
-        </h2>
-        <div className="grid grid-cols-2 gap-4 mt-2">
-          <div>
-            <span className="text-gray-500">CPF:</span>
-            <span className="ml-2 text-gray-700">{pessoa.numeroCic}</span>
-          </div>
-          <div>
-            <span className="text-gray-500">Código Cliente:</span>
-            <span className="ml-2 text-gray-700">{pessoa.codigoCliente}</span>
-          </div>
+    <div className="bg-gray-50 p-4 rounded-lg shadow-md space-y-4">
+      {/* Cabeçalho com Informações Principais */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="bg-white p-3 rounded-md shadow-sm col-span-3">
+          <p className="text-xs text-gray-600">Nome</p>
+          <p className="text-base font-semibold text-gray-800">
+            {pessoa.nomePessoa}
+          </p>
+        </div>
+        <div className="bg-white p-3 rounded-md shadow-sm">
+          <p className="text-xs text-gray-600">CPF</p>
+          <p className="text-sm text-gray-800">{pessoa.numeroCic}</p>
+        </div>
+        <div className="bg-white p-3 rounded-md shadow-sm">
+          <p className="text-xs text-gray-600">Código Cliente</p>
+          <p className="text-sm text-gray-800">{pessoa.codigoCliente}</p>
+        </div>
+        <div className="bg-white p-3 rounded-md shadow-sm">
+          <p className="text-xs text-gray-600">Localização</p>
+          <p className="text-sm text-gray-800">{pessoa.descricaoLocalizacao}</p>
         </div>
       </div>
 
-      {/* Grid de informações */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Grid com 3 colunas para as principais seções */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Informações Pessoais */}
         <div>
-          <h3 className="text-lg font-medium text-gray-800 mb-3">
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">
             Informações Pessoais
           </h3>
-          <div className="bg-gray-50 rounded p-4 space-y-2">
-            <div>
-              <span className="text-gray-500">Cliente Desde:</span>
-              <span className="ml-2 text-gray-700">
+          <div className="space-y-2">
+            <div className="bg-white p-3 rounded-md shadow-sm">
+              <p className="text-xs text-gray-600">Cliente Desde</p>
+              <p className="text-sm text-gray-800">
                 {new Date(pessoa.dataClienteDesde).toLocaleDateString("pt-BR")}
-              </span>
+              </p>
             </div>
-            <div>
-              <span className="text-gray-500">Renovação Cadastral:</span>
-              <span className="ml-2 text-gray-700">
+            <div className="bg-white p-3 rounded-md shadow-sm">
+              <p className="text-xs text-gray-600">Renovação Cadastral</p>
+              <p className="text-sm text-gray-800">
                 {new Date(pessoa.dataRenovacaoCadastral).toLocaleDateString(
                   "pt-BR"
                 )}
-              </span>
-            </div>
-            <div>
-              <span className="text-gray-500">Localização:</span>
-              <span className="ml-2 text-gray-700">
-                {pessoa.descricaoLocalizacao}
-              </span>
+              </p>
             </div>
           </div>
         </div>
@@ -88,93 +87,80 @@ export function PessoaFisicaDetails({ apiResponse }: PessoaFisicaDetailsProps) {
         {/* Endereço */}
         {endereco && (
           <div>
-            <h3 className="text-lg font-medium text-gray-800 mb-3">Endereço</h3>
-            <div className="bg-gray-50 rounded p-4 space-y-2">
-              <div>
-                <span className="text-gray-500">Logradouro:</span>
-                <span className="ml-2 text-gray-700">
-                  {endereco.nomeLogradouro}, {endereco.numeroEndereco}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">Bairro:</span>
-                <span className="ml-2 text-gray-700">
-                  {endereco.nomeBairro}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">Cidade/UF:</span>
-                <span className="ml-2 text-gray-700">
-                  {endereco.nomeCidade}/{endereco.siglaUf}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">CEP:</span>
-                <span className="ml-2 text-gray-700">{endereco.codigoCep}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Telefone:</span>
-                <span className="ml-2 text-gray-700">
-                  ({endereco.numeroDdd}) {endereco.numeroTelefone}
-                </span>
-              </div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">
+              Endereço
+            </h3>
+            <div className="bg-white p-3 rounded-md shadow-sm">
+              <p className="text-sm text-gray-800">
+                {endereco.nomeLogradouro}, {endereco.numeroEndereco}
+              </p>
+              <p className="text-xs text-gray-600">
+                {endereco.nomeBairro} - {endereco.nomeCidade}/{endereco.siglaUf}
+              </p>
+              <p className="text-xs text-gray-600">CEP: {endereco.codigoCep}</p>
+              <p className="text-xs text-gray-600">
+                Tel: ({endereco.numeroDdd}) {endereco.numeroTelefone}
+              </p>
             </div>
           </div>
         )}
+
+        {/* Informações Familiares */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">
+            Informações Familiares
+          </h3>
+          <div className="space-y-2">
+            {mae && (
+              <div className="bg-white p-3 rounded-md shadow-sm">
+                <p className="text-xs text-gray-600">Mãe</p>
+                <p className="text-sm text-gray-800">{mae.nomeParente}</p>
+              </div>
+            )}
+            {pai && (
+              <div className="bg-white p-3 rounded-md shadow-sm">
+                <p className="text-xs text-gray-600">Pai</p>
+                <p className="text-sm text-gray-800">{pai.nomeParente}</p>
+              </div>
+            )}
+            {conjuge && (
+              <div className="bg-white p-3 rounded-md shadow-sm">
+                <p className="text-xs text-gray-600">Cônjuge</p>
+                <p className="text-sm text-gray-800">{conjuge.nomeParente}</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Informações Familiares */}
-      <div className="mt-6">
-        <h3 className="text-lg font-medium text-gray-800 mb-3">
-          Informações Familiares
+      {/* Informações Adicionais em grid de 4 colunas */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-2">
+          Informações Adicionais
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {mae && (
-            <div className="bg-gray-50 rounded p-4">
-              <h4 className="font-medium text-gray-700 mb-2">Mãe</h4>
-              <p className="text-sm text-gray-600">{mae.nomeParente}</p>
-            </div>
-          )}
-          {pai && (
-            <div className="bg-gray-50 rounded p-4">
-              <h4 className="font-medium text-gray-700 mb-2">Pai</h4>
-              <p className="text-sm text-gray-600">{pai.nomeParente}</p>
-            </div>
-          )}
-          {conjuge && (
-            <div className="bg-gray-50 rounded p-4">
-              <h4 className="font-medium text-gray-700 mb-2">Cônjuge</h4>
-              <p className="text-sm text-gray-600">{conjuge.nomeParente}</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Informações Adicionais */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-        <div className="text-center p-3 bg-blue-50 rounded">
-          <span className="text-sm text-gray-500 block">Segmento</span>
-          <span className="font-medium text-blue-600">{pessoa.segmento}</span>
-        </div>
-        <div className="text-center p-3 bg-green-50 rounded">
-          <span className="text-sm text-gray-500 block">
-            Nível de Relacionamento
-          </span>
-          <span className="font-medium text-green-600">
-            {pessoa.indicadorNivelRelacionamento ? "Sim" : "Não"}
-          </span>
-        </div>
-        <div className="text-center p-3 bg-purple-50 rounded">
-          <span className="text-sm text-gray-500 block">Isenção IOF</span>
-          <span className="font-medium text-purple-600">
-            {pessoa.indicadorIsencaoIof ? "Sim" : "Não"}
-          </span>
-        </div>
-        <div className="text-center p-3 bg-orange-50 rounded">
-          <span className="text-sm text-gray-500 block">Isenção IRF</span>
-          <span className="font-medium text-orange-600">
-            {pessoa.indicadorIsencaoIrf ? "Sim" : "Não"}
-          </span>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-white p-3 rounded-md shadow-sm">
+            <p className="text-xs text-gray-600">Segmento</p>
+            <p className="text-sm text-gray-800">{pessoa.segmento}</p>
+          </div>
+          <div className="bg-white p-3 rounded-md shadow-sm">
+            <p className="text-xs text-gray-600">Nível de Relacionamento</p>
+            <p className="text-sm text-gray-800">
+              {pessoa.indicadorNivelRelacionamento ? "Sim" : "Não"}
+            </p>
+          </div>
+          <div className="bg-white p-3 rounded-md shadow-sm">
+            <p className="text-xs text-gray-600">Isenção IOF</p>
+            <p className="text-sm text-gray-800">
+              {pessoa.indicadorIsencaoIof ? "Sim" : "Não"}
+            </p>
+          </div>
+          <div className="bg-white p-3 rounded-md shadow-sm">
+            <p className="text-xs text-gray-600">Isenção IRF</p>
+            <p className="text-sm text-gray-800">
+              {pessoa.indicadorIsencaoIrf ? "Sim" : "Não"}
+            </p>
+          </div>
         </div>
       </div>
     </div>
