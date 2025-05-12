@@ -312,8 +312,12 @@ export default function Home() {
 
             <button
               onClick={handleSearch}
-              disabled={loading}
-              className="h-12 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors text-sm disabled:bg-blue-300"
+              disabled={loading || !search.trim()}
+              className={`h-12 px-6 rounded-full transition-colors text-sm ${
+                loading || !search.trim()
+                  ? "bg-blue-300 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700 text-white"
+              }`}
             >
               {loading ? "Processando..." : "Buscar"}
             </button>
