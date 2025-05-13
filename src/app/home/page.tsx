@@ -167,7 +167,7 @@ export default function Home() {
     const errosOperacoes = response.data?.resultados
       ? Object.values(response.data.resultados)
           .flat()
-          .filter((op) => !op?.sucesso).length
+          .filter((op) => !(op as { sucesso: boolean })?.sucesso).length
       : 0;
 
     const errosGerais = response.data?.erros?.length || 0;

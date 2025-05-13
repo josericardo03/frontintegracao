@@ -1,3 +1,4 @@
+import React from "react";
 import { ApiResponse } from "../../types/api";
 
 interface PessoaJuridicaDetailsProps {
@@ -25,11 +26,18 @@ export function PessoaJuridicaDetails({
     );
   }
 
-  if (!apiResponse?.data?.resultados?.pessoaAtualizada?.[0]) {
+  // Verifica se existe dados em pessoaAtualizada ou pessoas
+  const pessoaAtualizada =
+    apiResponse?.data?.resultados?.pessoaAtualizada?.[0]?.responseData;
+  const pessoa = apiResponse?.data?.resultados?.pessoa?.[0]?.responseData;
+
+  // Se não houver dados em nenhum dos dois, retorna null
+  if (!pessoaAtualizada && !pessoa) {
     return null;
   }
 
-  const pessoa = apiResponse.data.resultados.pessoaAtualizada[0].responseData;
+  // Usa os dados de pessoaAtualizada se existirem, caso contrário usa os dados de pessoas
+  const dadosPessoa = pessoaAtualizada || pessoa;
   const endereco = apiResponse.data.resultados.endereco?.[0]?.responseData;
   const enderecoCorrespondencia =
     apiResponse.data.resultados.enderecoPessoal?.[0]?.responseData;
@@ -44,16 +52,16 @@ export function PessoaJuridicaDetails({
         <div className="bg-white p-3 rounded-md shadow-sm col-span-3">
           <p className="text-xs text-gray-600">Nome</p>
           <p className="text-base font-semibold text-gray-800">
-            {pessoa.nomePessoa}
+            {dadosPessoa.nomePessoa}
           </p>
         </div>
         <div className="bg-white p-3 rounded-md shadow-sm">
           <p className="text-xs text-gray-600">CNPJ</p>
-          <p className="text-sm text-gray-800">{pessoa.numeroCic}</p>
+          <p className="text-sm text-gray-800">{dadosPessoa.numeroCic}</p>
         </div>
         <div className="bg-white p-3 rounded-md shadow-sm">
           <p className="text-xs text-gray-600">Código Cliente</p>
-          <p className="text-sm text-gray-800">{pessoa.codigoCliente}</p>
+          <p className="text-sm text-gray-800">{dadosPessoa.codigoCliente}</p>
         </div>
         {ramo && (
           <div className="bg-white p-3 rounded-md shadow-sm">
@@ -74,15 +82,17 @@ export function PessoaJuridicaDetails({
             <div className="bg-white p-3 rounded-md shadow-sm">
               <p className="text-xs text-gray-600">Cliente Desde</p>
               <p className="text-sm text-gray-800">
-                {new Date(pessoa.dataClienteDesde).toLocaleDateString("pt-BR")}
+                {new Date(dadosPessoa.dataClienteDesde).toLocaleDateString(
+                  "pt-BR"
+                )}
               </p>
             </div>
             <div className="bg-white p-3 rounded-md shadow-sm">
               <p className="text-xs text-gray-600">Renovação Cadastral</p>
               <p className="text-sm text-gray-800">
-                {new Date(pessoa.dataRenovacaoCadastral).toLocaleDateString(
-                  "pt-BR"
-                )}
+                {new Date(
+                  dadosPessoa.dataRenovacaoCadastral
+                ).toLocaleDateString("pt-BR")}
               </p>
             </div>
           </div>
@@ -117,20 +127,86 @@ export function PessoaJuridicaDetails({
               Contatos
             </h3>
             <div className="space-y-2">
-              {contatos.map((contato, index) => (
-                <div key={index} className="bg-white p-3 rounded-md shadow-sm">
-                  <p className="text-xs text-gray-600">
-                    {contato.responseData.codigoTipoContato === "EML"
-                      ? "E-mail"
-                      : "Telefone"}
-                  </p>
-                  <p className="text-sm text-gray-800">
-                    {contato.responseData.codigoTipoContato === "EML"
-                      ? contato.responseData.descricaoEmail
-                      : contato.responseData.telefoneCompletoDescription}
-                  </p>
-                </div>
-              ))}
+              {contatos.map(
+                (
+                  contato: {
+                    responseData: {
+                      codigoTipoContato: string;
+                      descricaoEmail:
+                        | string
+                        | number
+                        | bigint
+                        | boolean
+                        | React.ReactElement<
+                            unknown,
+                            string | React.JSXElementConstructor<any>
+                          >
+                        | Iterable<React.ReactNode>
+                        | React.ReactPortal
+                        | Promise<
+                            | string
+                            | number
+                            | bigint
+                            | boolean
+                            | React.ReactPortal
+                            | React.ReactElement<
+                                unknown,
+                                string | React.JSXElementConstructor<any>
+                              >
+                            | Iterable<React.ReactNode>
+                            | null
+                            | undefined
+                          >
+                        | null
+                        | undefined;
+                      telefoneCompletoDescription:
+                        | string
+                        | number
+                        | bigint
+                        | boolean
+                        | React.ReactElement<
+                            unknown,
+                            string | React.JSXElementConstructor<any>
+                          >
+                        | Iterable<React.ReactNode>
+                        | React.ReactPortal
+                        | Promise<
+                            | string
+                            | number
+                            | bigint
+                            | boolean
+                            | React.ReactPortal
+                            | React.ReactElement<
+                                unknown,
+                                string | React.JSXElementConstructor<any>
+                              >
+                            | Iterable<React.ReactNode>
+                            | null
+                            | undefined
+                          >
+                        | null
+                        | undefined;
+                    };
+                  },
+                  index: React.Key | null | undefined
+                ) => (
+                  <div
+                    key={index}
+                    className="bg-white p-3 rounded-md shadow-sm"
+                  >
+                    <p className="text-xs text-gray-600">
+                      {contato.responseData.codigoTipoContato === "EML"
+                        ? "E-mail"
+                        : "Telefone"}
+                    </p>
+                    <p className="text-sm text-gray-800">
+                      {contato.responseData.codigoTipoContato === "EML"
+                        ? contato.responseData.descricaoEmail
+                        : contato.responseData.telefoneCompletoDescription}
+                    </p>
+                  </div>
+                )
+              )}
             </div>
           </div>
         )}
@@ -141,36 +217,128 @@ export function PessoaJuridicaDetails({
         <div>
           <h3 className="text-lg font-semibold text-gray-800 mb-2">Sócios</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {socios.map((socio, index) => (
-              <div key={index} className="bg-white p-3 rounded-md shadow-sm">
-                <div className="space-y-1">
-                  <div>
-                    <p className="text-xs text-gray-600">Nome</p>
-                    <p className="text-sm text-gray-800">
-                      {socio.responseData.nomePessoa}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600">CPF</p>
-                    <p className="text-sm text-gray-800">
-                      {socio.responseData.numeroCicSocio}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600">Participação</p>
-                    <p className="text-sm text-gray-800">
-                      {socio.responseData.percentualParticipacaoCapitalTotal}%
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600">Representante Legal</p>
-                    <p className="text-sm text-gray-800">
-                      {socio.responseData.representanteLegal ? "Sim" : "Não"}
-                    </p>
+            {socios.map(
+              (
+                socio: {
+                  responseData: {
+                    nomePessoa:
+                      | string
+                      | number
+                      | bigint
+                      | boolean
+                      | React.ReactElement<
+                          unknown,
+                          string | React.JSXElementConstructor<any>
+                        >
+                      | Iterable<React.ReactNode>
+                      | React.ReactPortal
+                      | Promise<
+                          | string
+                          | number
+                          | bigint
+                          | boolean
+                          | React.ReactPortal
+                          | React.ReactElement<
+                              unknown,
+                              string | React.JSXElementConstructor<any>
+                            >
+                          | Iterable<React.ReactNode>
+                          | null
+                          | undefined
+                        >
+                      | null
+                      | undefined;
+                    numeroCicSocio:
+                      | string
+                      | number
+                      | bigint
+                      | boolean
+                      | React.ReactElement<
+                          unknown,
+                          string | React.JSXElementConstructor<any>
+                        >
+                      | Iterable<React.ReactNode>
+                      | React.ReactPortal
+                      | Promise<
+                          | string
+                          | number
+                          | bigint
+                          | boolean
+                          | React.ReactPortal
+                          | React.ReactElement<
+                              unknown,
+                              string | React.JSXElementConstructor<any>
+                            >
+                          | Iterable<React.ReactNode>
+                          | null
+                          | undefined
+                        >
+                      | null
+                      | undefined;
+                    percentualParticipacaoCapitalTotal:
+                      | string
+                      | number
+                      | bigint
+                      | boolean
+                      | React.ReactElement<
+                          unknown,
+                          string | React.JSXElementConstructor<any>
+                        >
+                      | Iterable<React.ReactNode>
+                      | React.ReactPortal
+                      | Promise<
+                          | string
+                          | number
+                          | bigint
+                          | boolean
+                          | React.ReactPortal
+                          | React.ReactElement<
+                              unknown,
+                              string | React.JSXElementConstructor<any>
+                            >
+                          | Iterable<React.ReactNode>
+                          | null
+                          | undefined
+                        >
+                      | null
+                      | undefined;
+                    representanteLegal: any;
+                  };
+                },
+                index: React.Key | null | undefined
+              ) => (
+                <div key={index} className="bg-white p-3 rounded-md shadow-sm">
+                  <div className="space-y-1">
+                    <div>
+                      <p className="text-xs text-gray-600">Nome</p>
+                      <p className="text-sm text-gray-800">
+                        {socio.responseData.nomePessoa}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600">CPF</p>
+                      <p className="text-sm text-gray-800">
+                        {socio.responseData.numeroCicSocio}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600">Participação</p>
+                      <p className="text-sm text-gray-800">
+                        {socio.responseData.percentualParticipacaoCapitalTotal}%
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600">
+                        Representante Legal
+                      </p>
+                      <p className="text-sm text-gray-800">
+                        {socio.responseData.representanteLegal ? "Sim" : "Não"}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            )}
           </div>
         </div>
       )}
@@ -183,24 +351,24 @@ export function PessoaJuridicaDetails({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-white p-3 rounded-md shadow-sm">
             <p className="text-xs text-gray-600">Segmento</p>
-            <p className="text-sm text-gray-800">{pessoa.segmento}</p>
+            <p className="text-sm text-gray-800">{dadosPessoa.segmento}</p>
           </div>
           <div className="bg-white p-3 rounded-md shadow-sm">
             <p className="text-xs text-gray-600">Nível de Relacionamento</p>
             <p className="text-sm text-gray-800">
-              {pessoa.indicadorNivelRelacionamento ? "Sim" : "Não"}
+              {dadosPessoa.indicadorNivelRelacionamento ? "Sim" : "Não"}
             </p>
           </div>
           <div className="bg-white p-3 rounded-md shadow-sm">
             <p className="text-xs text-gray-600">Isenção IOF</p>
             <p className="text-sm text-gray-800">
-              {pessoa.indicadorIsencaoIof ? "Sim" : "Não"}
+              {dadosPessoa.indicadorIsencaoIof ? "Sim" : "Não"}
             </p>
           </div>
           <div className="bg-white p-3 rounded-md shadow-sm">
             <p className="text-xs text-gray-600">Isenção IRF</p>
             <p className="text-sm text-gray-800">
-              {pessoa.indicadorIsencaoIrf ? "Sim" : "Não"}
+              {dadosPessoa.indicadorIsencaoIrf ? "Sim" : "Não"}
             </p>
           </div>
         </div>
