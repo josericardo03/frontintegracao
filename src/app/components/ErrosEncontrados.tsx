@@ -1,62 +1,54 @@
-import { ApiResponse } from "../../types/api";
+import { ApiResponse } from "@/types/api";
 
 interface ErrosEncontradosProps {
   apiResponse: ApiResponse;
 }
 
 export function ErrosEncontrados({ apiResponse }: ErrosEncontradosProps) {
-  // Função para extrair erros de forma segura
-  const getErros = () => {
-    const erros: { documento: string; mensagem: string }[] = [];
+  // Função para extrair mensagens de erro de forma segura
+  const extrairErros = () => {
+    const erros: string[] = [];
 
-    // Erros gerais da API
-    if (apiResponse.data?.erros) {
-      apiResponse.data.erros.forEach((erro) => {
-        erros.push({
-          documento: erro.cnpj,
-          mensagem: erro.erro,
-        });
-      });
+    // Verifica se há erro geral na resposta
+    if (!apiResponse.success) {
+      erros.push(apiResponse.message || "Erro desconhecido");
     }
 
-    // Erros nos resultados
+    // Verifica erros nos resultados
     if (apiResponse.data?.resultados) {
-      Object.entries(apiResponse.data.resultados).forEach(
-        ([tipo, operacoes]) => {
-          if (Array.isArray(operacoes)) {
-            operacoes.forEach((op) => {
-              if (!op?.sucesso) {
-                erros.push({
-                  documento: op.cnpj || op.cpf || "Documento não especificado",
-                  mensagem: op.mensagem || "Erro não especificado",
-                });
-              }
-            });
-          }
+      Object.entries(apiResponse.data.resultados).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          value.forEach((item: any) => {
+            if (!item.sucesso && item.mensagem) {
+              erros.push(`Erro em ${key}: ${item.mensagem}`);
+            }
+          });
         }
-      );
+      });
     }
 
     return erros;
   };
 
-  const erros = getErros();
+  const erros = extrairErros();
 
+  // Se não houver erros, não renderiza nada
   if (erros.length === 0) {
     return null;
   }
 
   return (
-    <div className="bg-red-50 p-4 rounded-lg shadow">
-      <h4 className="font-medium mb-2 text-red-600">Erros Encontrados</h4>
-      <div className="space-y-2">
+    <div className="bg-red-50 p-4 rounded-lg shadow-md">
+      <h2 className="text-lg font-semibold text-red-800 mb-2">
+        Erros Encontrados
+      </h2>
+      <ul className="space-y-2">
         {erros.map((erro, index) => (
-          <div key={index} className="border-b border-red-200 pb-2">
-            <p className="text-red-600">Documento: {erro.documento}</p>
-            <p className="text-red-600">Mensagem: {erro.mensagem}</p>
-          </div>
+          <li key={index} className="text-sm text-red-700">
+            • {typeof erro === "string" ? erro : "Erro desconhecido"}
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }

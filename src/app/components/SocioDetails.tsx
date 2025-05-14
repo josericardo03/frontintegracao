@@ -1,4 +1,11 @@
 import { ApiResponse } from "@/types/api";
+import {
+  ReactElement,
+  JSXElementConstructor,
+  ReactNode,
+  ReactPortal,
+  Key,
+} from "react";
 
 interface SocioDetailsProps {
   apiResponse: ApiResponse;
@@ -25,8 +32,9 @@ export function SocioDetails({ apiResponse }: SocioDetailsProps) {
 
   const getPessoaData = () => {
     const pessoaAtualizada =
-      apiResponse.data?.resultados?.pessoaAtualizada?.[0];
-    return pessoaAtualizada?.responseData;
+      apiResponse.data?.resultados?.pessoaAtualizada?.[0]?.responseData;
+    const pessoa = apiResponse.data?.resultados?.pessoa?.[0]?.responseData;
+    return pessoaAtualizada || pessoa;
   };
 
   const getContatos = () => {
@@ -45,6 +53,13 @@ export function SocioDetails({ apiResponse }: SocioDetailsProps) {
     const familiares =
       apiResponse.data?.resultados?.[tipo.toLowerCase()]?.[0]?.responseData;
     return familiares;
+  };
+
+  // Função auxiliar para garantir que o valor seja uma string
+  const ensureString = (value: any): string => {
+    if (value === null || value === undefined) return "";
+    if (typeof value === "object") return JSON.stringify(value);
+    return String(value);
   };
 
   const pessoaData = getPessoaData();
@@ -67,32 +82,38 @@ export function SocioDetails({ apiResponse }: SocioDetailsProps) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="bg-white p-3 rounded-md shadow-sm">
             <p className="text-xs text-gray-600">Nome</p>
-            <p className="text-sm text-gray-800">{pessoaData.nomePessoa}</p>
+            <p className="text-sm text-gray-800">
+              {ensureString(pessoaData.nomePessoa)}
+            </p>
           </div>
           <div className="bg-white p-3 rounded-md shadow-sm">
             <p className="text-xs text-gray-600">CPF</p>
-            <p className="text-sm text-gray-800">{pessoaData.numeroCic}</p>
+            <p className="text-sm text-gray-800">
+              {ensureString(pessoaData.numeroCic)}
+            </p>
           </div>
           <div className="bg-white p-3 rounded-md shadow-sm">
             <p className="text-xs text-gray-600">Código do Cliente</p>
-            <p className="text-sm text-gray-800">{pessoaData.codigoCliente}</p>
+            <p className="text-sm text-gray-800">
+              {ensureString(pessoaData.codigoCliente)}
+            </p>
           </div>
           <div className="bg-white p-3 rounded-md shadow-sm">
             <p className="text-xs text-gray-600">Cliente Desde</p>
             <p className="text-sm text-gray-800">
-              {pessoaData.dataClienteDesde}
+              {ensureString(pessoaData.dataClienteDesde)}
             </p>
           </div>
           <div className="bg-white p-3 rounded-md shadow-sm">
             <p className="text-xs text-gray-600">Renovação Cadastral</p>
             <p className="text-sm text-gray-800">
-              {pessoaData.dataRenovacaoCadastral}
+              {ensureString(pessoaData.dataRenovacaoCadastral)}
             </p>
           </div>
           <div className="bg-white p-3 rounded-md shadow-sm">
             <p className="text-xs text-gray-600">Localização</p>
             <p className="text-sm text-gray-800">
-              {pessoaData.descricaoLocalizacao}
+              {ensureString(pessoaData.descricaoLocalizacao)}
             </p>
           </div>
         </div>
@@ -104,20 +125,43 @@ export function SocioDetails({ apiResponse }: SocioDetailsProps) {
         <div>
           <h2 className="text-lg font-semibold text-gray-800 mb-2">Contatos</h2>
           <div className="space-y-2">
-            {contatos.map((contato, index) => (
-              <div key={index} className="bg-white p-3 rounded-md shadow-sm">
-                <p className="text-xs text-gray-600">
-                  {contato.responseData.codigoTipoContato === "EML"
-                    ? "Email"
-                    : "Telefone"}
-                </p>
-                <p className="text-sm text-gray-800">
-                  {contato.responseData.codigoTipoContato === "EML"
-                    ? contato.responseData.descricaoEmail
-                    : contato.responseData.telefoneCompletoDescription}
-                </p>
-              </div>
-            ))}
+            {contatos.map(
+              (
+                contato: {
+                  responseData: {
+                    codigoTipoContato: string;
+                    descricaoEmail: string;
+                    telefoneCompletoDescription: string;
+                  };
+                },
+                index: Key | null | undefined
+              ) => {
+                // Verifica se responseData existe antes de renderizar
+                if (!contato?.responseData) return null;
+
+                const {
+                  codigoTipoContato,
+                  descricaoEmail,
+                  telefoneCompletoDescription,
+                } = contato.responseData;
+
+                return (
+                  <div
+                    key={index}
+                    className="bg-white p-3 rounded-md shadow-sm"
+                  >
+                    <p className="text-xs text-gray-600">
+                      {codigoTipoContato === "EML" ? "Email" : "Telefone"}
+                    </p>
+                    <p className="text-sm text-gray-800">
+                      {codigoTipoContato === "EML"
+                        ? ensureString(descricaoEmail)
+                        : ensureString(telefoneCompletoDescription)}
+                    </p>
+                  </div>
+                );
+              }
+            )}
           </div>
         </div>
 
@@ -131,19 +175,20 @@ export function SocioDetails({ apiResponse }: SocioDetailsProps) {
               </h2>
               <div className="bg-white p-3 rounded-md shadow-sm">
                 <p className="text-sm text-gray-800">
-                  {enderecoPessoal.nomeLogradouro},{" "}
-                  {enderecoPessoal.numeroEndereco}
+                  {ensureString(enderecoPessoal.nomeLogradouro)},{" "}
+                  {ensureString(enderecoPessoal.numeroEndereco)}
                 </p>
                 <p className="text-xs text-gray-600">
-                  {enderecoPessoal.nomeBairro} - {enderecoPessoal.nomeCidade}/
-                  {enderecoPessoal.siglaUf}
+                  {ensureString(enderecoPessoal.nomeBairro)} -{" "}
+                  {ensureString(enderecoPessoal.nomeCidade)}/
+                  {ensureString(enderecoPessoal.siglaUf)}
                 </p>
                 <p className="text-xs text-gray-600">
-                  CEP: {enderecoPessoal.codigoCep}
+                  CEP: {ensureString(enderecoPessoal.codigoCep)}
                 </p>
                 <p className="text-xs text-gray-600">
-                  Tel: ({enderecoPessoal.numeroDdd}){" "}
-                  {enderecoPessoal.numeroTelefone}
+                  Tel: ({ensureString(enderecoPessoal.numeroDdd)}){" "}
+                  {ensureString(enderecoPessoal.numeroTelefone)}
                 </p>
               </div>
             </div>
@@ -157,19 +202,20 @@ export function SocioDetails({ apiResponse }: SocioDetailsProps) {
               </h2>
               <div className="bg-white p-3 rounded-md shadow-sm">
                 <p className="text-sm text-gray-800">
-                  {enderecoEmpresa.nomeLogradouro},{" "}
-                  {enderecoEmpresa.numeroEndereco}
+                  {ensureString(enderecoEmpresa.nomeLogradouro)},{" "}
+                  {ensureString(enderecoEmpresa.numeroEndereco)}
                 </p>
                 <p className="text-xs text-gray-600">
-                  {enderecoEmpresa.nomeBairro} - {enderecoEmpresa.nomeCidade}/
-                  {enderecoEmpresa.siglaUf}
+                  {ensureString(enderecoEmpresa.nomeBairro)} -{" "}
+                  {ensureString(enderecoEmpresa.nomeCidade)}/
+                  {ensureString(enderecoEmpresa.siglaUf)}
                 </p>
                 <p className="text-xs text-gray-600">
-                  CEP: {enderecoEmpresa.codigoCep}
+                  CEP: {ensureString(enderecoEmpresa.codigoCep)}
                 </p>
                 <p className="text-xs text-gray-600">
-                  Tel: ({enderecoEmpresa.numeroDdd}){" "}
-                  {enderecoEmpresa.numeroTelefone}
+                  Tel: ({ensureString(enderecoEmpresa.numeroDdd)}){" "}
+                  {ensureString(enderecoEmpresa.numeroTelefone)}
                 </p>
               </div>
             </div>
@@ -185,7 +231,9 @@ export function SocioDetails({ apiResponse }: SocioDetailsProps) {
             {mae && (
               <div className="bg-white p-3 rounded-md shadow-sm">
                 <p className="text-xs text-gray-600">Mãe</p>
-                <p className="text-sm text-gray-800">{mae.nomeParente}</p>
+                <p className="text-sm text-gray-800">
+                  {ensureString(mae.nomeParente)}
+                </p>
                 <p className="text-xs text-gray-600">
                   {mae.parentePoliticamenteExposto ? "PEP" : "Não PEP"}
                 </p>
@@ -194,7 +242,9 @@ export function SocioDetails({ apiResponse }: SocioDetailsProps) {
             {pai && (
               <div className="bg-white p-3 rounded-md shadow-sm">
                 <p className="text-xs text-gray-600">Pai</p>
-                <p className="text-sm text-gray-800">{pai.nomeParente}</p>
+                <p className="text-sm text-gray-800">
+                  {ensureString(pai.nomeParente)}
+                </p>
                 <p className="text-xs text-gray-600">
                   {pai.parentePoliticamenteExposto ? "PEP" : "Não PEP"}
                 </p>
@@ -203,9 +253,11 @@ export function SocioDetails({ apiResponse }: SocioDetailsProps) {
             {conjuge && (
               <div className="bg-white p-3 rounded-md shadow-sm">
                 <p className="text-xs text-gray-600">Cônjuge</p>
-                <p className="text-sm text-gray-800">{conjuge.nomeParente}</p>
+                <p className="text-sm text-gray-800">
+                  {ensureString(conjuge.nomeParente)}
+                </p>
                 <p className="text-xs text-gray-600">
-                  CPF: {conjuge.cpfParente}
+                  CPF: {ensureString(conjuge.cpfParente)}
                 </p>
                 <p className="text-xs text-gray-600">
                   {conjuge.parentePoliticamenteExposto ? "PEP" : "Não PEP"}
@@ -224,7 +276,9 @@ export function SocioDetails({ apiResponse }: SocioDetailsProps) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-white p-3 rounded-md shadow-sm">
             <p className="text-xs text-gray-600">Segmento</p>
-            <p className="text-sm text-gray-800">{pessoaData.segmento}</p>
+            <p className="text-sm text-gray-800">
+              {ensureString(pessoaData.segmento)}
+            </p>
           </div>
           <div className="bg-white p-3 rounded-md shadow-sm">
             <p className="text-xs text-gray-600">Nível de Relacionamento</p>
@@ -247,7 +301,7 @@ export function SocioDetails({ apiResponse }: SocioDetailsProps) {
           <div className="bg-white p-3 rounded-md shadow-sm col-span-2">
             <p className="text-xs text-gray-600">Tipo de Ligação</p>
             <p className="text-sm text-gray-800">
-              {pessoaData.tipoLigacao?.description}
+              {ensureString(pessoaData.tipoLigacao?.description)}
             </p>
           </div>
         </div>
