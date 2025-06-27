@@ -1,7 +1,9 @@
 import { ApiResponse, SearchParams } from "../../types/api";
 import axios from "axios";
+import Cookies from "js-cookie";
 
-const BASE_URL = "http://localhost:4001";
+// Utilize a variável de ambiente se disponível, caso contrário use o IP local
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://192.168.10.88:4001";
 
 // Configuração global do axios
 const apiClient = axios.create({
@@ -16,6 +18,13 @@ const apiClient = axios.create({
 // Interceptor para log de requisições
 apiClient.interceptors.request.use(
   (config) => {
+    // Adiciona o username do cookie nos headers
+    const userName =
+      Cookies.get("username") || Cookies.get("displayName") || "Usuario";
+    if (config.headers) {
+      config.headers["x-user-name"] = userName;
+    }
+
     console.log("Enviando requisição:", {
       url: `${config.baseURL}${config.url}`,
       method: config.method,
